@@ -8,6 +8,12 @@ Full-stack portal for agencies and freelancers: **projects, files, invoices, and
 
 ![Login](public/screenshots/login.jpg)
 
+![Admin dashboard](public/screenshots/admin-dashboard.jpg)
+
+![Project thread](public/screenshots/project-thread.jpg)
+
+![Invoices](public/screenshots/invoices.jpg)
+
 ## Features
 
 - Credentials auth (Auth.js) with login rate limiting
