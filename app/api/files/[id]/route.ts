@@ -1,11 +1,12 @@
 import { jsonError } from "@/lib/api";
 import { requireAdmin, requireUser } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
+import { canDeleteFile, canViewProject } from "@/lib/permissions";
 import {
-  canDeleteFile,
-  canViewProject,
-} from "@/lib/permissions";
-import { deleteObject, getObjectBytes } from "@/lib/storage";
+  deleteObject,
+  getObjectBytes,
+  safeDownloadName,
+} from "@/lib/storage";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -22,17 +23,22 @@ export async function GET(_req: Request, ctx: Ctx) {
     return jsonError("not_found", "File not found.", 404);
   }
 
-  if (file.storageDriver === "blob") {
-    return Response.redirect(file.storageKey, 302);
+  try {
+    // Always proxy bytes (never 302 to public blob URL)
+    const bytes = await getObjectBytes(file.storageKey, file.storageDriver);
+    const filename = safeDownloadName(file.originalName);
+    return new Response(new Uint8Array(bytes), {
+      headers: {
+        "Content-Type": file.mimeType,
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  } catch (e) {
+    console.error(e);
+    return jsonError("not_found", "File not found.", 404);
   }
-
-  const bytes = await getObjectBytes(file.storageKey, file.storageDriver);
-  return new Response(new Uint8Array(bytes), {
-    headers: {
-      "Content-Type": file.mimeType,
-      "Content-Disposition": `attachment; filename="${file.originalName.replace(/"/g, "")}"`,
-    },
-  });
 }
 
 export async function DELETE(_req: Request, ctx: Ctx) {
@@ -46,6 +52,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
   const file = await prisma.fileAsset.findUnique({ where: { id } });
   if (!file) return jsonError("not_found", "File not found.", 404);
 
+  // Blob GC before DB row delete
   await deleteObject(file.storageKey, file.storageDriver);
   await prisma.fileAsset.delete({ where: { id } });
   return new Response(null, { status: 204 });

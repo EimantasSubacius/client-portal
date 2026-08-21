@@ -91,7 +91,9 @@ erDiagram
 - No edit/delete messages
 - No server-generated PDF (browser print)
 - No email notifications
-- Local disk storage in development only; production requires Vercel Blob
+- File downloads are always proxied (private Blob / local disk). Do not share raw storage URLs.
+- Login rate limit: 5 attempts / 10 min per IP+email (in-memory; best-effort on multi-instance serverless)
+- Local disk storage in development only; production requires Vercel Blob (`access: private`)
 - Postgres only (no SQLite)
 
 ## License

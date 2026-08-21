@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { safeInternalPath } from "@/lib/safe-path";
 
 export function LoginForm({ showHints }: { showHints: boolean }) {
   const router = useRouter();
@@ -26,7 +27,7 @@ export function LoginForm({ showHints }: { showHints: boolean }) {
         setError(data.error || "Login failed");
         return;
       }
-      router.push(search.get("next") || "/dashboard");
+      router.push(safeInternalPath(search.get("next")));
       router.refresh();
     } catch {
       setError("Network error");

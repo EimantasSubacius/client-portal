@@ -46,10 +46,14 @@ export function getConfig(): AppConfig {
   return cached;
 }
 
+/** Read demo hint flag without swallowing storage/config hard failures. */
 export function demoHintsEnabled(): boolean {
-  try {
-    return Boolean(getConfig().DEMO_LOGIN_HINTS);
-  } catch {
-    return process.env.DEMO_LOGIN_HINTS === "true";
+  return process.env.DEMO_LOGIN_HINTS === "true";
+}
+
+/** Call early on sensitive server routes to enforce prod storage rules. */
+export function assertProdStorageConfig(): void {
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
+    getConfig();
   }
 }

@@ -7,6 +7,7 @@ import {
   ALLOWED_MIME,
   buildStorageKey,
   putObject,
+  sniffMime,
 } from "@/lib/storage";
 
 export async function POST(req: Request) {
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
     return jsonError("not_found", "Project not found.", 404);
   }
   if (!canUploadFile(authz.user, project)) {
-    return jsonError("forbidden", "Cannot upload to this project.", 403);
+    return jsonError("not_found", "Project not found.", 404);
   }
 
   const config = getConfig();
@@ -36,25 +37,36 @@ export async function POST(req: Request) {
   if (file.size > config.MAX_UPLOAD_BYTES) {
     return jsonError("payload_too_large", "File too large.", 413);
   }
-  if (!ALLOWED_MIME.has(file.type)) {
-    return jsonError("unsupported_media", "File type not allowed.", 415);
-  }
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  const key = buildStorageKey(projectId, file.name);
-  const stored = await putObject(key, bytes, file.type);
+  const sniffed = sniffMime(bytes);
+  if (!sniffed || !ALLOWED_MIME.has(sniffed)) {
+    return jsonError(
+      "unsupported_media",
+      "File type not allowed (content check failed).",
+      415,
+    );
+  }
 
-  const asset = await prisma.fileAsset.create({
-    data: {
-      projectId,
-      uploadedById: authz.user.id,
-      originalName: file.name,
-      mimeType: file.type,
-      sizeBytes: file.size,
-      storageKey: stored.storageKey,
-      storageDriver: stored.driver,
-    },
-  });
+  try {
+    const key = buildStorageKey(projectId, file.name);
+    const stored = await putObject(key, bytes, sniffed);
 
-  return jsonData(asset, 201);
+    const asset = await prisma.fileAsset.create({
+      data: {
+        projectId,
+        uploadedById: authz.user.id,
+        originalName: file.name,
+        mimeType: sniffed,
+        sizeBytes: file.size,
+        storageKey: stored.storageKey,
+        storageDriver: stored.driver,
+      },
+    });
+
+    return jsonData(asset, 201);
+  } catch (e) {
+    console.error(e);
+    return jsonError("internal", "Upload failed.", 500);
+  }
 }
