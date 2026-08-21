@@ -2,7 +2,17 @@
 
 Full-stack portal for agencies and freelancers: **projects, files, invoices, and messages** with admin/client roles.
 
-**Repo:** https://github.com/EimantasSubacius/client-portal
+**Live demo:** [https://client-portal-zeta-rust.vercel.app](https://client-portal-zeta-rust.vercel.app)
+
+![Home](public/screenshots/home.jpg)
+
+![Login](public/screenshots/login.jpg)
+
+![Admin dashboard](public/screenshots/admin-dashboard.jpg)
+
+![Project thread](public/screenshots/project-thread.jpg)
+
+![Invoices](public/screenshots/invoices.jpg)
 
 ## Features
 
@@ -15,7 +25,7 @@ Full-stack portal for agencies and freelancers: **projects, files, invoices, and
 
 ## Stack
 
-Next.js (App Router) · TypeScript · Prisma · PostgreSQL · Auth.js · Zod · Vitest · Tailwind
+Next.js (App Router) · TypeScript · Prisma · PostgreSQL (Neon) · Auth.js · Zod · Vitest · Tailwind · Vercel Blob
 
 ## Quick start
 

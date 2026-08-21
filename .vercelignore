@@ -1,0 +1,6 @@
+.pgdata
+uploads
+.node_modules
+.next
+.env
+.env.local
